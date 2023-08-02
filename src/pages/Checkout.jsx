@@ -2,13 +2,12 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import superTokenList from "@superfluid-finance/tokenlist";
 import { useParams } from "react-router-dom";
 import SuperfluidWidget from "@superfluid-finance/widget";
-import { paymentDetails, productDetails } from "../p";
 import axios from "axios";
 import { useState, useEffect } from "react";
 
 export default function Checkout() {
   const { uri } = useParams();
-  const [data, setData] = useState([{ name: "jojoj" }]);
+  const [itemNotfound, setItemNotFound] = useState(false);
   const [paymentOptions, setPaymentOptions] = useState();
   const [productData, setProductData] = useState();
   useEffect(() => {
@@ -18,18 +17,23 @@ export default function Checkout() {
         const response = await axios.get(
           `http://localhost:3001/api/items/${uri}`
         );
-        const paymentOptions = response.data.itemDetail.paymentOptions;
-        const productData = {
-          name: response.data.itemDetail.name,
-          description: response.data.itemDetail.description,
-        };
-        const paymentData = { paymentOptions };
-
-        setProductData(productData);
-        setPaymentOptions(paymentData);
+        console.log(response);
+        if (response.data.error) {
+          console.log(response.data);
+          setItemNotFound(true);
+        } else {
+          const paymentOptions = response.data.itemDetail.paymentOptions;
+          const productData = {
+            name: response.data.itemDetail.name,
+            description: response.data.itemDetail.description,
+          };
+          const paymentData = { paymentOptions };
+          setProductData(productData);
+          setPaymentOptions(paymentData);
+        }
       } catch (error) {
         // Handle any errors that occur during the request
-        console.error("Error fetching data:", error);
+        console.log("Error fetching data:", error);
       }
     };
     fetchData();
@@ -94,6 +98,7 @@ export default function Checkout() {
           }}
         </ConnectButton.Custom>
       )}
+      {itemNotfound && <h1>Wrong URL</h1>}
     </>
   );
 }
