@@ -1,13 +1,13 @@
+import axios from "axios";
 import { useState } from "react";
 import { useAccount } from "wagmi";
-import { getChainName } from "../utils/getChainName";
-import { getSuperToken } from "../utils/getSuperToken";
 
 const SimpleForm = () => {
   const { address } = useAccount();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [uri, setUri] = useState("");
   const [paymentOptions, setPaymentOptions] = useState([
     {
       chainId: "",
@@ -22,9 +22,23 @@ const SimpleForm = () => {
     },
   ]);
   const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+  const checkURIAvailability = async (e) => {
+    setUri(e.target.value);
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/api/find/${e.target.value}`
+      );
+      if (!response.data.available) {
+        alert("This URI is already taken. Please choose another one.");
+        setUri("");
+      }
+    } catch (error) {
+      console.error("Error checking input availability:", error);
+    }
+  };
 
   // Function to handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Prepare the data object to be sent
@@ -32,12 +46,26 @@ const SimpleForm = () => {
       itemDetail: {
         name,
         description,
+        uri,
         paymentOptions,
       },
     };
 
     // Here, you can send the formData object to your backend or perform any other action
     console.log(formData);
+    try {
+      // Make the POST request using axios
+      const response = await axios.post(
+        "http://localhost:3001/api/items/",
+        formData
+      );
+
+      // Handle the response from the server as needed
+      console.log("Server response:", response.data);
+    } catch (error) {
+      // Handle any errors that occur during the request
+      console.error("Error submitting form data:", error);
+    }
   };
 
   // Function to add a new payment option to the array
@@ -46,7 +74,7 @@ const SimpleForm = () => {
       ...prevPaymentOptions,
       {
         chainId: "",
-        receiverAddress: address,
+        receiverAddress: "",
         superToken: {
           address: "",
         },
@@ -129,18 +157,31 @@ const SimpleForm = () => {
               className="w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:border-blue-500"
             />
           </div>
+          <div className="mb-4 w-[80%] m-auto">
+            <label
+              htmlFor="uri"
+              className="flex flex-start text-gray-700 font-bold my-2"
+            >
+              You Payment Link:
+            </label>
+            <div className="flex items-center w-full border rounded-lg px-3 py-2 shadow-sm focus-within:border-blue-500">
+              <div className="">{window.location.hostname}/</div>
+              <input
+                type="text"
+                id="uri"
+                value={uri}
+                onChange={checkURIAvailability}
+                className="flex-1 px-1 py-1 focus:outline-none"
+              />
+            </div>
+          </div>
         </div>
       )}
       {showPaymentDetails && (
         <div className="mb-4 mt-[40px] w-[90%] m-auto">
           <h3 className="text-xl font-bold mb-2">Payment Options:</h3>
           {paymentOptions.map((option, index) => (
-            <div
-              key={index}
-              className={`mb-4 ${
-                index != paymentOptions.length - 1 && `hidden`
-              }`}
-            >
+            <div key={index} className="mb-4">
               <label className="flex flex-start text-gray-700 font-bold my-2">
                 Chain ID:
               </label>
@@ -220,32 +261,29 @@ const SimpleForm = () => {
           </button>
         </div>
       )}
-      {paymentOptions.length > 1 &&
-        showPaymentDetails &&
-        paymentOptions.map((item, index) => (
-          <div key={index} className="my-[10px]">
-            {item.chainId != "" && (
-              <div className="collapse bg-gray-800">
-                <input type="checkbox" />
-                <div className="collapse-title text-md font-medium">
-                  {getChainName(item.chainId)} - {item.flowRate.amountEther}
-                  &nbsp;
-                  {getSuperToken(item.superToken.address)}/
-                  {item.flowRate.period}
-                </div>
-
-                <div className="collapse-content flex flex-col text-left">
-                  <p>Flowrate: {item.flowRate.amountEther}</p>
-                  <p>Receiver: {item.receiverAddress}</p>
-                  <p>Supertoken: {getSuperToken(item.superToken.address)}</p>
-                  <p>Chain: {getChainName(item.chainId)}</p>
-                </div>
+      {paymentOptions.length > 1 && showPaymentDetails && (
+        <div>
+          <div className="collapse bg-gray-800">
+            <input type="checkbox" />
+            <div className="collapse-title text-md font-medium">
+              Goerli - Custom Amount
+            </div>
+            {paymentOptions.map((item, index) => (
+              <div
+                key={index}
+                className="collapse-content flex flex-col text-left"
+              >
+                <p>Flowrate: {item.flowRate.amountEther}</p>
+                <p>Receiver: {item.receiverAddress}</p>
+                <p>Supertoken: {item.superToken.address}</p>
+                <p>Chain: {item.chainId}</p>
               </div>
-            )}
+            ))}
           </div>
-        ))}
+        </div>
+      )}
 
-      {showPaymentDetails && (
+      {showPaymentDetails && uri !== "" && (
         <button type="submit" className=" btn btn-accent">
           Submit
         </button>
