@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useAccount } from "wagmi";
 import Success from "../components/SuccessModal";
 
-const SimpleForm = () => {
+const Form = () => {
   const { address } = useAccount();
 
   const [name, setName] = useState("");
@@ -28,7 +28,7 @@ const SimpleForm = () => {
     setUri(e.target.value);
     try {
       const response = await axios.get(
-        `http://localhost:3001/api/find/${e.target.value}`
+        `https://sfbe.onrender.com/api/find/${e.target.value}`
       );
       if (!response.data.available) {
         alert("This URI is already taken. Please choose another one.");
@@ -58,7 +58,7 @@ const SimpleForm = () => {
     try {
       // Make the POST request using axios
       const response = await axios.post(
-        "http://localhost:3001/api/items/",
+        "https://sfbe.onrender.com/api/items/",
         formData
       );
 
@@ -307,4 +307,4 @@ const SimpleForm = () => {
   );
 };
 
-export default SimpleForm;
+export default Form;
