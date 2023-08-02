@@ -15,7 +15,7 @@ export default function Checkout() {
       try {
         console.log("getting data");
         const response = await axios.get(
-          `http://localhost:3001/api/items/${uri}`
+          `https://sfbe.onrender.com/api/items/${uri}`
         );
         console.log(response);
         if (response.data.error) {
